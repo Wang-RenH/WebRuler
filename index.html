@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>鲁班尺 - 风水测量吉凶查询工具</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#8B0000", // 中国红
+              secondary: "#000000", // 黑色
+              accent: "#FFD700", // 金色
+              "primary-light": "#CD5C5C", // 浅红色
+              "secondary-light": "#333333", // 浅黑色
+              "accent-light": "#FFEB3B", // 浅黄色
+              ji: "#FF4500", // 吉色 - 红色
+              xiong: "#4169E1", // 凶色 - 蓝色
+            },
+            fontFamily: {
+              sans: ["Arial", "sans-serif"],
+              serif: ["SimSun", "serif"],
+            },
+            backgroundImage: {
+              "paper-texture":
+                "url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/8138fd1cbf6c45c49801f5e0168004e1~tplv-a9rns2rl98-image.image?rcl=2025111609214305FC3E7435B65A005202&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1765848143&x-signature=FGyMSaf2EzUABubsV52lR2s5KsQ%3D')",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style type="text/tailwindcss">
+      @layer utilities {
+        .content-auto {
+          content-visibility: auto;
+        }
+        .text-shadow {
+          text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .border-gold {
+          border-color: #ffd700;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        /* .images {
+          position: absolute;
+          background-color: black;
+          z-index: 1;
+          width: 687px;
+        } */
+        /* 默认 PC 两栏 */
+        .images {
+          background-color: black;
+          display: flex;
+          gap: 1rem;
+        }
+        .left-images,
+        .right-images {
+          flex: 1;
+          text-align: center;
+        }
+        .luban-ruler-images {
+          background-color: black;
+          display: block; /* 去掉底部幽灵空白 */
+          width: 100%;
+          height: auto;
+        }
+
+        /* ========== 移动端适配 ========== */
+        @media (max-width: 768px) {
+          .images {
+            position: absolute;
+            margin-top: 20px;
+            width: 86.5%;
+            z-index: 1;
+            flex-direction: column; /* 上下堆叠 */
+            gap: 0.5rem;
+          }
+          .left-images span,
+          .right-images span {
+            font-size: 0.875rem; /* 14px */
+            margin-bottom: 0.25rem;
+          }
+        }
+
+        .luban-ruler {
+          height: 200px;
+          /* background: linear-gradient(to bottom, #8B4513, #A0522D); */
+          /* background-size: cover; */
+          /* background: url("https://free.picui.cn/free/2025/11/16/691930c2d5cda.png")
+            center center / contain no-repeat; */
+          border-radius: 8px;
+          position: relative;
+          background-color: black;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+          /* background-color: red; */
+        }
+        .luban-ruler::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 40%;
+          background: linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.3),
+            rgba(255, 255, 255, 0)
+          );
+          border-top-left-radius: 8px;
+          border-top-right-radius: 8px;
+        }
+        .ruler-marker {
+          position: absolute;
+          width: 4px;
+          background-color: #ff0000;
+          height: 100%;
+          top: 0;
+          transform: translateX(-50%);
+          z-index: 10;
+        }
+        .ruler-marker::after {
+          content: "";
+          position: absolute;
+          bottom: -10px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 10px solid transparent;
+          border-right: 10px solid transparent;
+          border-top: 10px solid #ff0000;
+        }
+        .ruler-section {
+          position: absolute;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+          box-sizing: border-box;
+          padding: 0 4px;
+          text-align: center;
+        }
+        .section-ji {
+          background: linear-gradient(to bottom, #ff6347, #dc143c);
+        }
+        .section-xiong {
+          background: linear-gradient(to bottom, #1e90ff, #0000cd);
+        }
+        .section-ji::before {
+          content: "吉";
+          position: absolute;
+          top: 2px;
+          right: 2px;
+          font-size: 8px;
+          opacity: 0.7;
+        }
+        .section-xiong::before {
+          content: "凶";
+          position: absolute;
+          top: 2px;
+          right: 2px;
+          font-size: 8px;
+          opacity: 0.7;
+        }
+        .detail-item {
+          transition: all 0.3s ease;
+        }
+        .detail-item:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .history-item {
+          transition: all 0.2s ease;
+        }
+        .history-item:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+        .history-item.active {
+          background-color: rgba(255, 215, 0, 0.2);
+          border-left: 3px solid #ffd700;
+        }
+        .animate-pulse-slow {
+          animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.7;
+          }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-scale-in {
+          animation: scaleIn 0.3s ease-in-out;
+        }
+        @keyframes scaleIn {
+          from {
+            transform: scale(0.95);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        .wood-texture {
+          background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%238B4513"/><path d="M0,0 Q50,10 100,0 Q150,10 200,0" stroke="%23A0522D" stroke-width="20" fill="none"/><path d="M0,40 Q50,50 100,40 Q150,50 200,40" stroke="%23A0522D" stroke-width="20" fill="none"/><path d="M0,80 Q50,90 100,80 Q150,90 200,80" stroke="%23A0522D" stroke-width="20" fill="none"/></svg>');
+          background-repeat: repeat;
+        }
+        .gold-texture {
+          background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23FFD700"/><path d="M0,0 L100,100 M100,0 L0,100" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-dasharray="5,5"/></svg>');
+          background-repeat: repeat;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900 text-white min-h-screen font-serif">
+    <!-- 背景装饰 -->
+    <div
+      class="fixed inset-0 bg-paper-texture bg-cover bg-center opacity-10 z-0"
+    ></div>
+
+    <!-- 页面容器 -->
+    <div class="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
+      <!-- 头部 -->
+      <header class="text-center mb-8 animate-fade-in">
+        <h1 class="text-4xl md:text-5xl font-bold text-accent mb-2 text-shadow">
+          鲁班尺
+        </h1>
+        <p class="text-xl text-gray-300">风水测量吉凶查询工具</p>
+      </header>
+
+      <!-- 主要内容区 -->
+      <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- 左侧：交互尺区域 -->
+        <div
+          class="lg:col-span-2 bg-secondary bg-opacity-70 rounded-lg p-6 backdrop-blur-sm border border-gold border-opacity-30 shadow-lg"
+        >
+          <h2 class="text-2xl font-bold mb-6 text-center text-accent">
+            动态鲁班尺
+          </h2>
+
+          <!-- 单位切换 -->
+          <div class="flex justify-center mb-6">
+            <div class="inline-flex rounded-md shadow-sm" role="group">
+              <button
+                id="cm-btn"
+                class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-l-lg hover:bg-primary-light focus:z-10 focus:ring-2 focus:ring-primary"
+              >
+                厘米 (cm)
+              </button>
+              <button
+                id="inch-btn"
+                class="px-4 py-2 text-sm font-medium text-white bg-secondary-light rounded-r-lg hover:bg-gray-700 focus:z-10 focus:ring-2 focus:ring-primary"
+              >
+                英寸 (inch)
+              </button>
+            </div>
+          </div>
+
+          <!-- 滑块控制 -->
+          <div class="mb-6">
+            <div class="flex justify-between mb-2">
+              <span class="text-sm text-gray-400">0</span>
+              <span id="current-value" class="text-lg font-bold text-accent"
+                >0 cm</span
+              >
+              <span class="text-sm text-gray-400">200</span>
+            </div>
+            <input
+              type="range"
+              id="ruler-slider"
+              min="0"
+              max="200"
+              value="0"
+              step="0.1"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-accent"
+            />
+          </div>
+
+          <!-- 中间代码 -->
+          <div class="images">
+            <div class="left-images">
+              <span>左侧</span>
+              <img
+                class="luban-ruler-images"
+                src="https://free.picui.cn/free/2025/11/16/69193ae328b2e.png"
+                alt=""
+              />
+            </div>
+            <div class="right-images">
+              <span>左侧</span>
+              <img
+                class="luban-ruler-images"
+                src="https://free.picui.cn/free/2025/11/16/691936d86c37a.png"
+                alt=""
+              />
+            </div>
+          </div>
+
+          <!-- 鲁班尺可视化 -->
+          <div class="relative mb-6 overflow-x-auto scrollbar-hide">
+            <div class="luban-ruler" id="luban-ruler">
+              <!-- 尺上的刻度和文字将由JavaScript动态生成 -->
+              <div
+                class="ruler-marker"
+                id="ruler-marker"
+                style="left: 0%"
+              ></div>
+            </div>
+
+            <!-- 刻度标签 -->
+            <div class="flex justify-between mt-2 text-xs text-gray-400">
+              <span>0</span>
+              <span>20</span>
+              <span>40</span>
+              <span>60</span>
+              <span>80</span>
+              <span>100</span>
+              <span>120</span>
+              <span>140</span>
+              <span>160</span>
+              <span>180</span>
+              <span>200</span>
+            </div>
+          </div>
+
+          <!-- 数值输入 -->
+          <div class="flex justify-center">
+            <div class="relative w-full max-w-xs">
+              <input
+                type="number"
+                id="length-input"
+                placeholder="输入长度"
+                min="0"
+                max="200"
+                step="0.1"
+                class="block w-full px-4 py-2 text-white bg-secondary-light border border-gray-600 rounded-lg focus:ring-accent focus:border-accent"
+              />
+              <button
+                id="query-btn"
+                class="absolute right-2 top-2 px-3 py-1 bg-primary hover:bg-primary-light text-white rounded"
+              >
+                查询
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：查询结果与解释区 -->
+        <div
+          class="bg-secondary bg-opacity-70 rounded-lg p-6 backdrop-blur-sm border border-gold border-opacity-30 shadow-lg"
+        >
+          <h2 class="text-2xl font-bold mb-6 text-center text-accent">
+            吉凶解析
+          </h2>
+
+          <!-- 结果显示区 -->
+          <div id="result-container" class="mb-8 animate-scale-in">
+            <div class="text-center mb-4">
+              <div id="result-character" class="text-4xl font-bold mb-2">
+                请测量
+              </div>
+              <div id="result-type" class="text-lg">选择或输入长度查看结果</div>
+            </div>
+
+            <div
+              id="result-details"
+              class="bg-gray-800 bg-opacity-50 rounded-lg p-4 border border-gray-700"
+            >
+              <p class="text-gray-400 text-center py-8">
+                <i class="fa fa-arrow-left mr-2"></i>
+                请在左侧测量或输入长度
+              </p>
+            </div>
+          </div>
+
+          <!-- 常见用途建议 -->
+          <div>
+            <h3
+              class="text-lg font-bold mb-4 text-gray-300 border-b border-gray-700 pb-2"
+            >
+              常见用途建议
+            </h3>
+            <div class="space-y-3">
+              <div
+                class="detail-item bg-gray-800 bg-opacity-30 rounded p-3 border border-gray-700"
+              >
+                <h4 class="font-bold text-accent">大门</h4>
+                <p class="text-sm text-gray-300">宜：财、本</p>
+                <p class="text-xs text-gray-400">忌：病、离、劫、害</p>
+              </div>
+              <div
+                class="detail-item bg-gray-800 bg-opacity-30 rounded p-3 border border-gray-700"
+              >
+                <h4 class="font-bold text-accent">卧室</h4>
+                <p class="text-sm text-gray-300">宜：财、义</p>
+                <p class="text-xs text-gray-400">忌：离、劫</p>
+              </div>
+              <div
+                class="detail-item bg-gray-800 bg-opacity-30 rounded p-3 border border-gray-700"
+              >
+                <h4 class="font-bold text-accent">书房</h4>
+                <p class="text-sm text-gray-300">宜：官、义</p>
+                <p class="text-xs text-gray-400">忌：病、害</p>
+              </div>
+              <div
+                class="detail-item bg-gray-800 bg-opacity-30 rounded p-3 border border-gray-700"
+              >
+                <h4 class="font-bold text-accent">厨房</h4>
+                <p class="text-sm text-gray-300">宜：本、财</p>
+                <p class="text-xs text-gray-400">忌：病、劫</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- 历史记录区 -->
+      <section
+        class="mt-8 bg-secondary bg-opacity-70 rounded-lg p-6 backdrop-blur-sm border border-gold border-opacity-30 shadow-lg"
+      >
+        <h2 class="text-2xl font-bold mb-6 text-center text-accent">
+          历史查询记录
+        </h2>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-gray-300">
+            <thead
+              class="text-xs text-gray-400 uppercase bg-gray-800 bg-opacity-50"
+            >
+              <tr>
+                <th scope="col" class="px-6 py-3">序号</th>
+                <th scope="col" class="px-6 py-3">长度</th>
+                <th scope="col" class="px-6 py-3">吉凶</th>
+                <th scope="col" class="px-6 py-3">属性</th>
+                <th scope="col" class="px-6 py-3">解释</th>
+                <th scope="col" class="px-6 py-3">操作</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <!-- 历史记录将由JavaScript动态生成 -->
+              <tr class="border-b border-gray-700">
+                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                  暂无查询记录
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex justify-center mt-6">
+          <button
+            id="clear-history-btn"
+            class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center"
+          >
+            <i class="fa fa-trash mr-2"></i> 清空记录
+          </button>
+        </div>
+      </section>
+
+      <!-- 底部信息区 -->
+      <footer class="mt-8 text-center text-gray-400 text-sm">
+        <p>© 2025 鲁班尺 - 风水测量吉凶查询工具</p>
+        <p class="mt-2">本工具仅供参考，请勿迷信</p>
+      </footer>
+    </div>
+
+    <!-- 弹出提示 -->
+    <div
+      id="toast"
+      class="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg transform translate-y-full opacity-0 transition-all duration-300 z-50"
+    >
+      操作成功
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+      // 鲁班尺数据
+      const lubanRulerData = [
+        {
+          startCm: 0,
+          endCm: 5.76,
+          name: "财",
+          type: "吉",
+          details: [
+            {
+              startCm: 0,
+              endCm: 1.44,
+              subName: "财德",
+              explanation: "财源广进，适宜求财",
+            },
+            {
+              startCm: 1.44,
+              endCm: 2.88,
+              subName: "宝库",
+              explanation: "招财进宝，财富聚集",
+            },
+            {
+              startCm: 2.88,
+              endCm: 4.32,
+              subName: "六合",
+              explanation: "天地人和，诸事顺遂",
+            },
+            {
+              startCm: 4.32,
+              endCm: 5.76,
+              subName: "迎福",
+              explanation: "迎接幸福，福气临门",
+            },
+          ],
+        },
+        {
+          startCm: 5.76,
+          endCm: 11.52,
+          name: "病",
+          type: "凶",
+          details: [
+            {
+              startCm: 5.76,
+              endCm: 7.2,
+              subName: "退财",
+              explanation: "钱财流失，破财消灾",
+            },
+            {
+              startCm: 7.2,
+              endCm: 8.64,
+              subName: "公事",
+              explanation: "官司缠身，是非不断",
+            },
+            {
+              startCm: 8.64,
+              endCm: 10.08,
+              subName: "牢执",
+              explanation: "牢狱之灾，官司缠身",
+            },
+            {
+              startCm: 10.08,
+              endCm: 11.52,
+              subName: "孤寡",
+              explanation: "孤独寂寞，缺乏依靠",
+            },
+          ],
+        },
+        {
+          startCm: 11.52,
+          endCm: 17.28,
+          name: "离",
+          type: "凶",
+          details: [
+            {
+              startCm: 11.52,
+              endCm: 12.96,
+              subName: "长庚",
+              explanation: "孤苦伶仃，疾病缠身",
+            },
+            {
+              startCm: 12.96,
+              endCm: 14.4,
+              subName: "劫财",
+              explanation: "被劫夺钱财，损失惨重",
+            },
+            {
+              startCm: 14.4,
+              endCm: 15.84,
+              subName: "死别",
+              explanation: "生离死别，亲人离世",
+            },
+            {
+              startCm: 15.84,
+              endCm: 17.28,
+              subName: "绝命",
+              explanation: "生命终结，厄运缠身",
+            },
+          ],
+        },
+        {
+          startCm: 17.28,
+          endCm: 23.04,
+          name: "义",
+          type: "吉",
+          details: [
+            {
+              startCm: 17.28,
+              endCm: 18.72,
+              subName: "大吉",
+              explanation: "吉祥如意，万事亨通",
+            },
+            {
+              startCm: 18.72,
+              endCm: 20.16,
+              subName: "财旺",
+              explanation: "财运兴旺，事业发达",
+            },
+            {
+              startCm: 20.16,
+              endCm: 21.6,
+              subName: "登科",
+              explanation: "金榜题名，学业有成",
+            },
+            {
+              startCm: 21.6,
+              endCm: 23.04,
+              subName: "贵子",
+              explanation: "生贵子，子孙昌盛",
+            },
+          ],
+        },
+        {
+          startCm: 23.04,
+          endCm: 28.8,
+          name: "官",
+          type: "吉",
+          details: [
+            {
+              startCm: 23.04,
+              endCm: 24.48,
+              subName: "顺科",
+              explanation: "仕途顺利，官运亨通",
+            },
+            {
+              startCm: 24.48,
+              endCm: 25.92,
+              subName: "横财",
+              explanation: "意外之财，偏财运好",
+            },
+            {
+              startCm: 25.92,
+              endCm: 27.36,
+              subName: "进益",
+              explanation: "收益增加，事业进步",
+            },
+            {
+              startCm: 27.36,
+              endCm: 28.8,
+              subName: "富贵",
+              explanation: "富贵荣华，生活无忧",
+            },
+          ],
+        },
+        {
+          startCm: 28.8,
+          endCm: 34.56,
+          name: "劫",
+          type: "凶",
+          details: [
+            {
+              startCm: 28.8,
+              endCm: 30.24,
+              subName: "灾至",
+              explanation: "灾祸降临，厄运不断",
+            },
+            {
+              startCm: 30.24,
+              endCm: 31.68,
+              subName: "死绝",
+              explanation: "生命终结，毫无希望",
+            },
+            {
+              startCm: 31.68,
+              endCm: 33.12,
+              subName: "离乡",
+              explanation: "背井离乡，漂泊不定",
+            },
+            {
+              startCm: 33.12,
+              endCm: 34.56,
+              subName: "窃盗",
+              explanation: "被盗窃，财产损失",
+            },
+          ],
+        },
+        {
+          startCm: 34.56,
+          endCm: 40.32,
+          name: "害",
+          type: "凶",
+          details: [
+            {
+              startCm: 34.56,
+              endCm: 35.0,
+              subName: "病临",
+              explanation: "疾病缠身，身体虚弱",
+            },
+            {
+              startCm: 35.0,
+              endCm: 37.44,
+              subName: "口舌",
+              explanation: "口舌是非，争吵不断",
+            },
+            {
+              startCm: 37.44,
+              endCm: 38.88,
+              subName: "官非",
+              explanation: "官司缠身，是非不断",
+            },
+            {
+              startCm: 38.88,
+              endCm: 40.32,
+              subName: "死临",
+              explanation: "死亡降临，大凶之兆",
+            },
+          ],
+        },
+        {
+          startCm: 40.32,
+          endCm: 46.08,
+          name: "本",
+          type: "吉",
+          details: [
+            {
+              startCm: 40.32,
+              endCm: 41.76,
+              subName: "财至",
+              explanation: "财运亨通，财富积累",
+            },
+            {
+              startCm: 41.76,
+              endCm: 43.2,
+              subName: "登科",
+              explanation: "金榜题名，学业有成",
+            },
+            {
+              startCm: 43.2,
+              endCm: 44.64,
+              subName: "进宝",
+              explanation: "招财进宝，财源广进",
+            },
+            {
+              startCm: 44.64,
+              endCm: 46.08,
+              subName: "兴旺",
+              explanation: "事业兴旺，家庭幸福",
+            },
+          ],
+        },
+      ];
+
+      // 历史记录数据
+      let historyRecords =
+        JSON.parse(localStorage.getItem("lubanRulerHistory")) || [];
+
+      // DOM 元素
+      const rulerSlider = document.getElementById("ruler-slider");
+      const currentValueDisplay = document.getElementById("current-value");
+      const rulerMarker = document.getElementById("ruler-marker");
+      const lubanRuler = document.getElementById("luban-ruler");
+      const cmBtn = document.getElementById("cm-btn");
+      const inchBtn = document.getElementById("inch-btn");
+      const lengthInput = document.getElementById("length-input");
+      const queryBtn = document.getElementById("query-btn");
+      const resultCharacter = document.getElementById("result-character");
+      const resultType = document.getElementById("result-type");
+      const resultDetails = document.getElementById("result-details");
+      const historyTableBody = document.getElementById("history-table-body");
+      const clearHistoryBtn = document.getElementById("clear-history-btn");
+      const toast = document.getElementById("toast");
+
+      // 当前单位（厘米/英寸）
+      let currentUnit = "cm";
+
+      // 初始化鲁班尺
+      function initRuler() {
+        // 清空尺子
+        while (lubanRuler.firstChild) {
+          if (lubanRuler.firstChild.id !== "ruler-marker") {
+            lubanRuler.removeChild(lubanRuler.firstChild);
+          } else {
+            break;
+          }
+        }
+
+        // 添加刻度和文字       这个不要
+        // lubanRulerData.forEach((section) => {
+        //   const sectionElement = document.createElement("div");
+        //   sectionElement.className = `ruler-section section-${section.type}`;
+        //   sectionElement.style.left = `${(section.startCm / 200) * 100}%`;
+        //   sectionElement.style.width = `${
+        //     ((section.endCm - section.startCm) / 200) * 100
+        //   }%`;
+        //   sectionElement.textContent = section.name;
+
+        //   lubanRuler.appendChild(sectionElement);
+        // });
+
+        // 更新历史记录
+        updateHistoryTable();
+      }
+
+      // 更新尺子显示
+      function updateRuler(lengthCm) {
+        // 计算位置百分比
+        const positionPercent = (lengthCm / 200) * 100;
+
+        // 更新滑块位置
+        rulerSlider.value = lengthCm;
+
+        // 更新标记位置
+        rulerMarker.style.left = `${positionPercent}%`;
+
+        // 更新当前值显示
+        if (currentUnit === "cm") {
+          currentValueDisplay.textContent = `${lengthCm.toFixed(1)} cm`;
+        } else {
+          const lengthInch = lengthCm / 2.54;
+          currentValueDisplay.textContent = `${lengthInch.toFixed(2)} inch`;
+        }
+
+        // 更新输入框
+        lengthInput.value =
+          currentUnit === "cm"
+            ? lengthCm.toFixed(1)
+            : (lengthCm / 2.54).toFixed(2);
+
+        // 更新结果
+        updateResult(lengthCm);
+      }
+
+      // 更新结果
+      function updateResult(lengthCm) {
+        // 循环处理鲁班尺（考虑到尺子可以无限延伸）
+        const baseLength = 46.08; // 鲁班尺基本长度
+        const normalizedLength = lengthCm % baseLength;
+
+        // 查找对应的刻度
+        let foundSection = null;
+        let foundDetail = null;
+
+        for (const section of lubanRulerData) {
+          if (
+            normalizedLength >= section.startCm &&
+            normalizedLength < section.endCm
+          ) {
+            foundSection = section;
+
+            // 查找子项
+            for (const detail of section.details) {
+              if (
+                normalizedLength >= detail.startCm &&
+                normalizedLength < detail.endCm
+              ) {
+                foundDetail = detail;
+                break;
+              }
+            }
+
+            break;
+          }
+        }
+
+        // 更新结果显示
+        if (foundSection && foundDetail) {
+          resultCharacter.textContent = foundSection.name;
+          resultCharacter.className = `text-4xl font-bold mb-2 text-${foundSection.type}`;
+
+          resultType.textContent = `${foundSection.type} - ${foundDetail.subName}`;
+          resultType.className = `text-lg text-${foundSection.type}`;
+
+          resultDetails.innerHTML = `
+          <div class="text-center mb-4">
+            <div class="text-xl font-bold ${
+              foundSection.type === "吉" ? "text-ji" : "text-xiong"
+            }">${foundDetail.subName}</div>
+          </div>
+          <p class="text-gray-300 mb-4">${foundDetail.explanation}</p>
+          <div class="mt-6">
+            <h4 class="font-bold text-accent mb-2">适用建议</h4>
+            <ul class="text-sm text-gray-300 list-disc list-inside">
+              ${getSuggestions(foundSection.name)}
+            </ul>
+          </div>
+        `;
+
+          // 添加到历史记录
+          addToHistory(lengthCm, foundSection, foundDetail);
+        } else {
+          resultCharacter.textContent = "未知";
+          resultCharacter.className = "text-4xl font-bold mb-2 text-gray-500";
+
+          resultType.textContent = "请测量有效长度";
+          resultType.className = "text-lg text-gray-500";
+
+          resultDetails.innerHTML = `
+          <p class="text-gray-400 text-center py-8">
+            无法解析该长度的吉凶
+          </p>
+        `;
+        }
+      }
+
+      // 获取适用建议
+      function getSuggestions(sectionName) {
+        const suggestions = {
+          财: [
+            "适合用于大门、保险柜、收银台",
+            "有利于提升财运和财富积累",
+            "商业场所最佳选择",
+          ],
+          病: [
+            "应避免用于任何重要位置",
+            "如已使用，建议进行风水化解",
+            "可考虑放置葫芦等风水物品",
+          ],
+          离: [
+            "不宜用于夫妻卧室或家庭主要活动区域",
+            "可能导致家庭不睦或分离",
+            "建议进行风水调整",
+          ],
+          义: [
+            "适合用于书房、佛堂等精神修养空间",
+            "有利于提升学业和道德修养",
+            "祠堂、学校等公共场所最佳选择",
+          ],
+          官: [
+            "适合用于办公室、书房",
+            "有利于提升事业运势和官运",
+            "政府机关或职场人士最佳选择",
+          ],
+          劫: [
+            "应避免用于任何重要位置",
+            "可能招致灾祸和破财",
+            "建议进行专业风水化解",
+          ],
+          害: [
+            "绝对不宜用于门窗尺寸",
+            "可能招致疾病和口舌是非",
+            "强烈建议调整尺寸",
+          ],
+          本: [
+            "适合用于建筑的主要结构尺寸",
+            "有利于家庭稳定和事业根基",
+            "住宅大门的理想选择",
+          ],
+        };
+
+        return suggestions[sectionName]
+          ? suggestions[sectionName].map((s) => `<li>${s}</li>`).join("")
+          : "<li>暂无特别建议</li>";
+      }
+
+      // 添加到历史记录
+      function addToHistory(lengthCm, section, detail) {
+        // 避免重复记录
+        const existingIndex = historyRecords.findIndex(
+          (record) => Math.abs(record.lengthCm - lengthCm) < 0.1
+        );
+
+        if (existingIndex !== -1) {
+          // 更新现有记录
+          historyRecords[existingIndex].timestamp = Date.now();
+        } else {
+          // 添加新记录
+          historyRecords.unshift({
+            id: Date.now(),
+            lengthCm,
+            section: section.name,
+            type: section.type,
+            subName: detail.subName,
+            explanation: detail.explanation,
+            timestamp: Date.now(),
+          });
+
+          // 限制历史记录数量
+          if (historyRecords.length > 10) {
+            historyRecords.pop();
+          }
+        }
+
+        // 保存到本地存储
+        localStorage.setItem(
+          "lubanRulerHistory",
+          JSON.stringify(historyRecords)
+        );
+
+        // 更新历史记录表格
+        updateHistoryTable();
+      }
+
+      // 更新历史记录表格
+      function updateHistoryTable() {
+        if (historyRecords.length === 0) {
+          historyTableBody.innerHTML = `
+          <tr class="border-b border-gray-700">
+            <td colspan="6" class="px-6 py-4 text-center text-gray-500">暂无查询记录</td>
+          </tr>
+        `;
+          return;
+        }
+
+        historyTableBody.innerHTML = "";
+
+        historyRecords.forEach((record, index) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-b border-gray-700 history-item";
+          tr.dataset.id = record.id;
+
+          const lengthDisplay =
+            currentUnit === "cm"
+              ? `${record.lengthCm.toFixed(1)} cm`
+              : `${(record.lengthCm / 2.54).toFixed(2)} inch`;
+
+          tr.innerHTML = `
+          <td class="px-6 py-4">${index + 1}</td>
+          <td class="px-6 py-4">${lengthDisplay}</td>
+          <td class="px-6 py-4">
+            <span class="px-2 py-1 text-xs font-medium rounded-full ${
+              record.type === "吉"
+                ? "bg-ji bg-opacity-20 text-ji"
+                : "bg-xiong bg-opacity-20 text-xiong"
+            }">
+              ${record.type}
+            </span>
+          </td>
+          <td class="px-6 py-4">${record.section} - ${record.subName}</td>
+          <td class="px-6 py-4 text-sm">${record.explanation}</td>
+          <td class="px-6 py-4">
+            <button class="text-accent hover:text-accent-light mr-3 use-again-btn" data-length="${
+              record.lengthCm
+            }">
+              <i class="fa fa-refresh"></i>
+            </button>
+            <button class="text-gray-400 hover:text-gray-300 delete-record-btn" data-id="${
+              record.id
+            }">
+              <i class="fa fa-trash"></i>
+            </button>
+          </td>
+        `;
+
+          historyTableBody.appendChild(tr);
+        });
+
+        // 添加事件监听器
+        document.querySelectorAll(".use-again-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const lengthCm = parseFloat(this.dataset.length);
+            updateRuler(lengthCm);
+
+            // 显示提示
+            showToast("已加载历史记录");
+          });
+        });
+
+        document.querySelectorAll(".delete-record-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const id = parseInt(this.dataset.id);
+
+            // 删除记录
+            historyRecords = historyRecords.filter(
+              (record) => record.id !== id
+            );
+
+            // 保存到本地存储
+            localStorage.setItem(
+              "lubanRulerHistory",
+              JSON.stringify(historyRecords)
+            );
+
+            // 更新表格
+            updateHistoryTable();
+
+            // 显示提示
+            showToast("已删除记录");
+          });
+        });
+      }
+
+      // 显示提示
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.remove("translate-y-full", "opacity-0");
+
+        setTimeout(() => {
+          toast.classList.add("translate-y-full", "opacity-0");
+        }, 2000);
+      }
+
+      // 事件监听器
+      rulerSlider.addEventListener("input", function () {
+        const lengthCm = parseFloat(this.value);
+        updateRuler(lengthCm);
+      });
+
+      cmBtn.addEventListener("click", function () {
+        currentUnit = "cm";
+        cmBtn.classList.add("bg-primary");
+        cmBtn.classList.remove("bg-secondary-light");
+        inchBtn.classList.add("bg-secondary-light");
+        inchBtn.classList.remove("bg-primary");
+
+        // 更新显示
+        const currentLengthCm = parseFloat(rulerSlider.value);
+        updateRuler(currentLengthCm);
+      });
+
+      inchBtn.addEventListener("click", function () {
+        currentUnit = "inch";
+        inchBtn.classList.add("bg-primary");
+        inchBtn.classList.remove("bg-secondary-light");
+        cmBtn.classList.add("bg-secondary-light");
+        cmBtn.classList.remove("bg-primary");
+
+        // 更新显示
+        const currentLengthCm = parseFloat(rulerSlider.value);
+        updateRuler(currentLengthCm);
+      });
+
+      queryBtn.addEventListener("click", function () {
+        const inputValue = parseFloat(lengthInput.value);
+
+        if (isNaN(inputValue) || inputValue < 0 || inputValue > 200) {
+          showToast("请输入有效的长度（0-200）");
+          return;
+        }
+
+        let lengthCm;
+
+        if (currentUnit === "cm") {
+          lengthCm = inputValue;
+        } else {
+          // 转换为厘米
+          lengthCm = inputValue * 2.54;
+
+          // 限制在0-200厘米范围内
+          if (lengthCm > 200) {
+            lengthCm = 200;
+            lengthInput.value = (lengthCm / 2.54).toFixed(2);
+          }
+        }
+
+        updateRuler(lengthCm);
+      });
+
+      lengthInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          queryBtn.click();
+        }
+      });
+
+      clearHistoryBtn.addEventListener("click", function () {
+        if (confirm("确定要清空所有历史记录吗？")) {
+          historyRecords = [];
+          localStorage.removeItem("lubanRulerHistory");
+          updateHistoryTable();
+          showToast("已清空历史记录");
+        }
+      });
+
+      // 初始化
+      document.addEventListener("DOMContentLoaded", function () {
+        initRuler();
+        updateRuler(0);
+      });
+    </script>
+  </body>
+</html>
